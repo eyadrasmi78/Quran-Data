@@ -8,6 +8,7 @@ import JuzListPage from './pages/JuzListPage.jsx';
 import JuzPage from './pages/JuzPage.jsx';
 import SajdaPage from './pages/SajdaPage.jsx';
 import StatsPage from './pages/StatsPage.jsx';
+import SharedPagesPage from './pages/SharedPagesPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/juz/:id" element={<JuzPage />} />
         <Route path="/sajda" element={<SajdaPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/shared-pages" element={<SharedPagesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>

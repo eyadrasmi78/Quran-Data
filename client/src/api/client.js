@@ -32,5 +32,14 @@ export const api = {
       Object.entries(params).filter(([, v]) => v != null && v !== '')
     ).toString();
     return get(`/pages${qs ? `?${qs}` : ''}`);
+  },
+  // الملف الخام لكل الصفحات الـ604 — يأتي من /data وليس /api، لذا fetch مباشر
+  allPages: async () => {
+    if (cache.has('__allPages')) return cache.get('__allPages');
+    const r = await fetch('/data/pagesQuran.json');
+    if (!r.ok) throw new Error('تعذّر تحميل بيانات الصفحات');
+    const data = await r.json();
+    cache.set('__allPages', data);
+    return data;
   }
 };

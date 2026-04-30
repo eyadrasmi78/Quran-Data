@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import { formatNumber } from '../api/stats.js';
+import { formatNumber, formatDurationAr, readingTimes, RECITATION_SPEEDS } from '../api/stats.js';
 
 export default function SurahStats({ stats }) {
   if (!stats) return null;
+  const rt = readingTimes(stats.wordsCount);
 
   const rows = [
     { label: 'مكان النزول', value: stats.revelationPlace || '—' },
@@ -62,7 +63,10 @@ export default function SurahStats({ stats }) {
           </span>
         </span>
       ) : 'لا يوجد'
-    }
+    },
+    { label: RECITATION_SPEEDS.tarteel.label, value: formatDurationAr(rt.tarteel) },
+    { label: RECITATION_SPEEDS.tajweed.label, value: formatDurationAr(rt.tajweed) },
+    { label: RECITATION_SPEEDS.hadr.label,    value: formatDurationAr(rt.hadr)    }
   ];
 
   return (

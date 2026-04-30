@@ -1,0 +1,62 @@
+# DigitalOcean App Platform spec for Quran-Data
+# Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+#
+# Deploys two components from the same GitHub repo:
+#   - api    : the Node.js Express API + raw data files (Dockerfile-based)
+#   - client : the React + Vite frontend (static site, served via DO CDN)
+#
+# Routing (handled by App Platform's HTTP gateway):
+#   /api/*  → api service        (port 5000)
+#   /data/* → api service        (raw images + JSON)
+#   /*      → client static site (SPA fallback to index.html)
+#
+# Total cost on the smallest tier: ~$5/month (api basic-xxs) + free static site.
+
+name: quran-data
+region: nyc
+
+services:
+  - name: api
+    github:
+      repo: eyadrasmi78/Quran-Data
+      branch: version-2.0
+      deploy_on_push: true
+    source_dir: /
+    dockerfile_path: Dockerfile
+    instance_count: 1
+    instance_size_slug: basic-xxs # 512MB / 1 vCPU — $5/mo
+    http_port: 5000
+    health_check:
+      http_path: /api/surahs
+      initial_delay_seconds: 15
+      period_seconds: 30
+      failure_threshold: 5
+    routes:
+      - path: /api
+      - path: /data
+    envs:
+      - key: PORT
+        value: "5000"
+        scope: RUN_TIME
+      - key: API_RATE_LIMIT
+        value: "300"
+        scope: RUN_TIME
+
+static_sites:
+  - name: client
+    github:
+      repo: eyadrasmi78/Quran-Data
+      branch: version-2.0
+      deploy_on_push: true
+    source_dir: /client
+    build_command: npm install && npm run build
+    output_dir: dist
+    catchall_document: index.html # SPA fallback for client-side routes
+    routes:
+      - path: /
+    envs:
+      # During build, point the client's API base URL at the same domain (relative).
+      # App Platform's gateway will route /api/* to the api service.
+      - key: VITE_API_URL
+        value: /api
+        scope: BUILD_TIME

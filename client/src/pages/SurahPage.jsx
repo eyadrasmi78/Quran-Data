@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
-import { computeSurahStats } from '../api/stats.js';
+import { computeSurahStats, verseTextStats, formatNumber } from '../api/stats.js';
 import VerseList from '../components/VerseList.jsx';
 import AudioPlayer from '../components/AudioPlayer.jsx';
 import SurahStats from '../components/SurahStats.jsx';
@@ -34,6 +34,11 @@ export default function SurahPage() {
   const stats = useMemo(
     () => (surah ? computeSurahStats(surah, pages, allSurahs || []) : null),
     [surah, pages, allSurahs]
+  );
+
+  const verseStats = useMemo(
+    () => (surah?.verses ? verseTextStats(surah.verses) : null),
+    [surah]
   );
 
   if (error)
@@ -93,6 +98,26 @@ export default function SurahPage() {
         </aside>
 
         <section className="lg:col-span-2 min-w-0">
+          {verseStats && verseStats.count > 1 && (
+            <div className="bg-white rounded-2xl border border-brand-100 p-4 mb-4 shadow-sm grid sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <p className="text-brand-600">متوسط الكلمات لكل آية</p>
+                <p className="text-xl font-bold text-brand-900">{verseStats.avgWords.toFixed(1)}</p>
+              </div>
+              <div>
+                <p className="text-brand-600">أقصر آية</p>
+                <p className="text-xl font-bold text-brand-900">
+                  آية {formatNumber(verseStats.shortest.number)} ({formatNumber(verseStats.shortest._w)} كلمة)
+                </p>
+              </div>
+              <div>
+                <p className="text-brand-600">أطول آية</p>
+                <p className="text-xl font-bold text-brand-900">
+                  آية {formatNumber(verseStats.longest.number)} ({formatNumber(verseStats.longest._w)} كلمة)
+                </p>
+              </div>
+            </div>
+          )}
           <h2 className="text-xl font-bold text-brand-800 mb-3">الآيات</h2>
           <VerseList
             verses={(surah.verses || []).map((v) => ({

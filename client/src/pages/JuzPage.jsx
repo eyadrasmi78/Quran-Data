@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { computeJuzStats } from '../api/stats.js';
 import VerseList from '../components/VerseList.jsx';
+import JuzStats from '../components/JuzStats.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 
 export default function JuzPage() {
   const { id } = useParams();
   const n = parseInt(id, 10);
   const [verses, setVerses] = useState(null);
+  const [allSurahs, setAllSurahs] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setVerses(null);
     setError(null);
-    api.juz(n).then(setVerses).catch((e) => setError(e.message));
+    Promise.all([api.juz(n), api.surahs()])
+      .then(([v, s]) => { setVerses(v); setAllSurahs(s); })
+      .catch((e) => setError(e.message));
   }, [n]);
+
+  const stats = useMemo(
+    () => (verses ? computeJuzStats(n, verses, allSurahs || []) : null),
+    [n, verses, allSurahs]
+  );
 
   if (error)
     return (
@@ -44,8 +54,16 @@ export default function JuzPage() {
           )}
         </div>
       </div>
-      <p className="text-brand-700">عدد الآيات في هذا الجزء: {verses.length}</p>
-      <VerseList verses={verses} showSurahName />
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <aside className="lg:col-span-1 lg:sticky lg:top-4 self-start">
+          <JuzStats stats={stats} />
+        </aside>
+        <section className="lg:col-span-2 min-w-0">
+          <h2 className="text-xl font-bold text-brand-800 mb-3">الآيات</h2>
+          <VerseList verses={verses} showSurahName />
+        </section>
+      </div>
     </div>
   );
 }

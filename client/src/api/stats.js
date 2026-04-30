@@ -224,3 +224,186 @@ export function formatNumber(n) {
   if (n == null) return '—';
   return new Intl.NumberFormat('ar-EG').format(n);
 }
+
+// ────────────────────────────────────────────────────────────────────────
+// إحصائيات نصّ الآية: عدّ الكلمات والحروف من النص الفعلي
+// ────────────────────────────────────────────────────────────────────────
+
+// نطاق حروف العربية (أساسي + موسّع) — يتجاهل التشكيل والأرقام والرموز
+const ARABIC_LETTER_RE = /[ء-غـ-يٮ-ٯٱ-ۓۺ-ۿ]/g;
+
+export function countArabicLetters(text) {
+  if (!text) return 0;
+  return (text.match(ARABIC_LETTER_RE) || []).length;
+}
+
+export function countWords(text) {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * احسب إحصائيات نصّية لمصفوفة آيات (تحوي text.ar).
+ * مفيد لحساب كلمات وحروف الجزء (الذي لا يأتي معه عدّ جاهز).
+ */
+export function computeTextStats(verses) {
+  let words = 0;
+  let letters = 0;
+  for (const v of verses) {
+    const t = v?.text?.ar || '';
+    words += countWords(t);
+    letters += countArabicLetters(t);
+  }
+  return { words, letters };
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// زمن القراءة — Reading Time Estimator
+// ────────────────────────────────────────────────────────────────────────
+
+// كلمات في الدقيقة (تقريبية) لثلاث سرعات تلاوة شائعة:
+export const RECITATION_SPEEDS = {
+  tarteel:  { wpm: 50,  label: 'ترتيل (بطيء)' },
+  tajweed:  { wpm: 80,  label: 'تجويد (متوسّط)' },
+  hadr:     { wpm: 120, label: 'حدر (سريع)' }
+};
+
+/**
+ * Returns a human-readable Arabic duration like "2 ساعة و15 دقيقة".
+ */
+export function formatDurationAr(minutes) {
+  if (!Number.isFinite(minutes) || minutes <= 0) return '—';
+  const total = Math.round(minutes);
+  if (total < 1) return 'أقل من دقيقة';
+  if (total < 60) return `${formatNumber(total)} دقيقة`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h < 24) {
+    return m === 0 ? `${formatNumber(h)} ساعة` : `${formatNumber(h)} س و${formatNumber(m)} د`;
+  }
+  const d = Math.floor(h / 24);
+  const rh = h % 24;
+  return rh === 0 ? `${formatNumber(d)} يوم` : `${formatNumber(d)} ي و${formatNumber(rh)} س`;
+}
+
+/**
+ * احسب أزمنة القراءة للسرعات الثلاث.
+ * @param {number} wordCount
+ * @returns {{tarteel:number, tajweed:number, hadr:number}} بالدقائق
+ */
+export function readingTimes(wordCount) {
+  if (!wordCount) return { tarteel: 0, tajweed: 0, hadr: 0 };
+  return {
+    tarteel: wordCount / RECITATION_SPEEDS.tarteel.wpm,
+    tajweed: wordCount / RECITATION_SPEEDS.tajweed.wpm,
+    hadr:    wordCount / RECITATION_SPEEDS.hadr.wpm
+  };
+}
+
+/**
+ * إذا قرأ المستخدم N صفحة يومياً، كم يوماً يحتاج لإنهاء القرآن (604 صفحة)؟
+ */
+export function daysToFinish(pagesPerDay) {
+  if (!pagesPerDay || pagesPerDay < 1) return 0;
+  return Math.ceil(TOTAL_PAGES / pagesPerDay);
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// الترتيب — Top / Bottom Rankings
+// ────────────────────────────────────────────────────────────────────────
+
+export function rankSurahs(surahs, key = 'verses_count', limit = 5, asc = false) {
+  const copy = [...surahs];
+  copy.sort((a, b) => (asc ? a[key] - b[key] : b[key] - a[key]));
+  return copy.slice(0, limit);
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// التقسيمات الكلاسيكية — Classical Divisions
+// ────────────────────────────────────────────────────────────────────────
+
+export const CLASSICAL_DIVISIONS = {
+  surahs:     114,
+  juzs:       30,    // أجزاء
+  hizbs:      60,    // أحزاب (كل جزء = حزبان)
+  quarters:   240,   // أرباع (كل حزب = 4 أرباع: ربع، نصف، ثلاثة أرباع، آخر)
+  pages:      604,
+  manzils:    7,     // منازل (لقراءة القرآن في أسبوع)
+  ruku:       556    // ركوع تقريبي (وقفات معروفة)
+};
+
+// ────────────────────────────────────────────────────────────────────────
+// إحصائيات على مستوى الآية — Verse-level
+// ────────────────────────────────────────────────────────────────────────
+
+/**
+ * حسب إحصائيات جزء من قائمة آياته (من /api/juz/:id) ومقابل قائمة كل السور.
+ * كل آية في الـjuz تحوي surahNumber + surahName + page + sajda + text.ar.
+ */
+export function computeJuzStats(juzNumber, juzVerses, allSurahsMeta = []) {
+  if (!juzVerses?.length) return null;
+
+  const pages = juzVerses.map((v) => v.page).filter(Number.isFinite);
+  const startPage = pages.length ? Math.min(...pages) : null;
+  const endPage = pages.length ? Math.max(...pages) : null;
+  const sajdaCount = juzVerses.filter((v) => v.sajda).length;
+  const { words, letters } = computeTextStats(juzVerses);
+
+  // تجميع حسب السورة
+  const map = new Map();
+  for (const v of juzVerses) {
+    const key = v.surahNumber;
+    if (!map.has(key)) {
+      const meta = allSurahsMeta.find((s) => s.number === key);
+      map.set(key, {
+        number: key,
+        name: v.surahName || meta?.name?.ar || `سورة ${key}`,
+        versesInJuz: 0,
+        versesTotal: meta?.verses_count || 0
+      });
+    }
+    map.get(key).versesInJuz += 1;
+  }
+  const surahsBreakdown = [...map.values()].sort((a, b) => a.number - b.number);
+
+  return {
+    number: juzNumber,
+    verses: juzVerses.length,
+    words,
+    letters,
+    startPage,
+    endPage,
+    pages: startPage && endPage ? endPage - startPage + 1 : 0,
+    surahsCount: surahsBreakdown.length,
+    surahsBreakdown,
+    sajdaCount
+  };
+}
+
+export function verseTextStats(verses) {
+  // verses: array with text.ar
+  if (!verses?.length) return null;
+  let longest = null;
+  let shortest = null;
+  let totalWords = 0;
+  let totalLetters = 0;
+
+  for (const v of verses) {
+    const t = v?.text?.ar || '';
+    const w = countWords(t);
+    const l = countArabicLetters(t);
+    totalWords += w;
+    totalLetters += l;
+    if (!longest || w > longest._w) longest = { ...v, _w: w, _l: l };
+    if (!shortest || w < shortest._w) shortest = { ...v, _w: w, _l: l };
+  }
+  return {
+    count: verses.length,
+    avgWords: totalWords / verses.length,
+    avgLetters: totalLetters / verses.length,
+    longest,
+    shortest,
+    totalWords,
+    totalLetters
+  };
+}
