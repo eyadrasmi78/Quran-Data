@@ -70,9 +70,23 @@ export default function StatsPage() {
       <header>
         <h1 className="text-3xl font-bold text-brand-800">إحصائيات القرآن الكريم</h1>
         <p className="text-brand-700 mt-1">
-          محسوبة محلياً من بيانات Docker — بدون تعديل في الـ API.
+          نظرة عامة + أدوات تحليل تفصيلية. كل البيانات محسوبة محلياً.
         </p>
       </header>
+
+      {/* Hub — links to dedicated stats pages */}
+      <Section title="أدوات التحليل التفصيلية">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <HubCard to="/stats/letters"     icon="ا"   title="تكرار الحروف" desc="28 حرفاً مرتّبة بالشيوع" />
+          <HubCard to="/stats/words"       icon="📖"  title="تحليل الكلمات" desc="أعلى التكرارات + سحابة + hapax" />
+          <HubCard to="/stats/verses"      icon="✦"   title="إحصائيات الآيات" desc="توزيع الأطوال + أطول/أقصر" />
+          <HubCard to="/stats/pages-dist"  icon="📄"  title="آيات لكل صفحة" desc="توزيع 6,236 آية على 604 صفحة" />
+          <HubCard to="/stats/revelation"  icon="🕋"  title="النزول والترتيب" desc="مكي/مدني + ترتيب النزول" />
+          <HubCard to="/stats/hizbs"       icon="📚"  title="الأحزاب الـ60" desc="بداية كل حزب" />
+          <HubCard to="/compare"           icon="⇔"   title="مقارنة سورتين" desc="جنباً إلى جنب" />
+          <HubCard to="/shared-pages"      icon="⛓"   title="الصفحات المشتركة" desc="51 صفحة بأكثر من سورة" />
+        </div>
+      </Section>
 
       {/* 1) الشبكة العامة */}
       <Section title="نظرة عامة">
@@ -260,6 +274,21 @@ function Section({ title, subtitle, children }) {
       </div>
       {children}
     </section>
+  );
+}
+
+function HubCard({ to, icon, title, desc }) {
+  return (
+    <Link
+      to={to}
+      className="group bg-white border border-brand-200 hover:border-brand-500 rounded-2xl p-4 shadow-sm hover:shadow transition flex items-start gap-3"
+    >
+      <span className="text-3xl shrink-0 text-brand-600 group-hover:text-brand-800">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-bold text-brand-900 text-sm">{title}</h3>
+        <p className="text-xs text-brand-600 mt-0.5">{desc}</p>
+      </div>
+    </Link>
   );
 }
 

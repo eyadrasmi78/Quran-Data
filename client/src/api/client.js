@@ -41,5 +41,18 @@ export const api = {
     const data = await r.json();
     cache.set('__allPages', data);
     return data;
+  },
+  // Statistics
+  stats: {
+    letters:      ()      => get('/stats/letters'),
+    words:        (limit = 100) => get(`/stats/words?limit=${limit}`),
+    distribution: ()      => get('/stats/verse-distribution'),
+    versesPerPage:()      => get('/stats/verses-per-page'),
+    hapax:        (limit = 50)  => get(`/stats/hapax?limit=${limit}`),
+    definite:     ()      => get('/stats/definite-article'),
+    revelation:   ()      => get('/stats/revelation'),
+    extremes:     ()      => get('/stats/surah-extremes'),
+    hizbs:        ()      => get('/stats/hizbs'),
+    compare:      (a, b)  => get(`/compare/${a}/${b}`)
   }
 };

@@ -74,6 +74,18 @@ def api_contract_tests():
             ("GET /api/verse/1/1",                  f"{API}/api/verse/1/1",                  200),
             ("GET /data/quran_image/1.png",         f"{API}/data/quran_image/1.png",         200),
             ("GET /data/pagesQuran.json",           f"{API}/data/pagesQuran.json",           200),
+            # Stats endpoints
+            ("GET /api/stats/letters",              f"{API}/api/stats/letters",              200),
+            ("GET /api/stats/words?limit=10",       f"{API}/api/stats/words?limit=10",       200),
+            ("GET /api/stats/verse-distribution",   f"{API}/api/stats/verse-distribution",   200),
+            ("GET /api/stats/verses-per-page",      f"{API}/api/stats/verses-per-page",      200),
+            ("GET /api/stats/hapax",                f"{API}/api/stats/hapax",                200),
+            ("GET /api/stats/definite-article",     f"{API}/api/stats/definite-article",     200),
+            ("GET /api/stats/revelation",           f"{API}/api/stats/revelation",           200),
+            ("GET /api/stats/surah-extremes",       f"{API}/api/stats/surah-extremes",       200),
+            ("GET /api/stats/hizbs",                f"{API}/api/stats/hizbs",                200),
+            ("GET /api/compare/2/3",                f"{API}/api/compare/2/3",                200),
+            ("GET /api/compare/abc/3 (invalid)",    f"{API}/api/compare/abc/3",              400),
         ]
         for name, url, expected in cases:
             code = http_status(url)
@@ -259,9 +271,14 @@ def browser_tests():
             with section("Stats page (/stats)"):
                 page.goto(f"{CLIENT}/stats", wait_until="networkidle")
                 page.wait_for_timeout(500)
-                # 8 stat tiles in overview
-                tiles = page.locator("section >> nth=0 >> div.grid > div").count()
-                record("PASS" if tiles >= 6 else "FAIL", "overview tiles rendered", f"{tiles}")
+                # 8 stat tiles in overview — find by canonical labels rather than DOM nth
+                overview_present = sum(
+                    1 for label in ("عدد السور", "عدد الأجزاء", "عدد الصفحات",
+                                    "عدد الآيات", "عدد الكلمات", "عدد الحروف")
+                    if page.locator(f"text={label}").count() > 0
+                )
+                record("PASS" if overview_present >= 6 else "FAIL",
+                       "overview tiles present (by label)", f"{overview_present}/6")
                 # Reading time block (3 speeds)
                 rt_blocks = page.locator("text=ترتيل").count()
                 record("PASS" if rt_blocks >= 1 else "FAIL", "reading-time speeds shown")
@@ -323,6 +340,50 @@ def browser_tests():
                 page.wait_for_timeout(500)
                 articles = page.locator("article").count()
                 record("PASS" if 10 <= articles <= 25 else "FAIL", "sajda verses listed", f"{articles}")
+
+            with section("Stats sub-pages"):
+                # Letters
+                page.goto(f"{CLIENT}/stats/letters", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                rows = page.locator("table tbody tr").count()
+                record("PASS" if 28 <= rows <= 40 else "FAIL", "letters table rows", f"{rows} (expected ~36)")
+                # Words tabs
+                page.goto(f"{CLIENT}/stats/words", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                page.click("text=سحابة الكلمات")
+                page.wait_for_timeout(300)
+                cloud_words = page.locator(".font-quran span").count()
+                record("PASS" if cloud_words >= 30 else "FAIL", "word cloud rendered", f"{cloud_words} words")
+                # Verses page (longest verse Al-Baqarah 282)
+                page.goto(f"{CLIENT}/stats/verses", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                txt = page.inner_text("body")
+                record("PASS" if "البقرة" in txt and "282" in txt else "FAIL", "longest-verse callout shows Al-Baqarah 282")
+                # Pages-dist
+                page.goto(f"{CLIENT}/stats/pages-dist", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                rows = page.locator("table tbody tr").count()
+                record("PASS" if rows >= 25 else "FAIL", "top-30 pages table", f"{rows}")
+                # Revelation
+                page.goto(f"{CLIENT}/stats/revelation", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                rows = page.locator("table tbody tr").count()
+                record("PASS" if rows == 114 else "FAIL", "chronology table 114 rows", f"{rows}")
+                # Hizbs
+                page.goto(f"{CLIENT}/stats/hizbs", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                hizbs = page.locator("text=حزب").count()
+                record("PASS" if hizbs >= 60 else "FAIL", "60 hizbs listed", f"{hizbs}")
+                # Compare picker
+                page.goto(f"{CLIENT}/compare", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                btn = page.locator("button:has-text('قارن')")
+                record("PASS" if btn.count() == 1 else "FAIL", "compare picker present")
+                # Compare result
+                page.goto(f"{CLIENT}/compare/2/3", wait_until="networkidle")
+                page.wait_for_timeout(500)
+                txt = page.inner_text("body")
+                record("PASS" if "البقرة" in txt and "آل عمران" in txt else "FAIL", "compare 2 vs 3")
 
             with section("Shared pages (/shared-pages)"):
                 page.goto(f"{CLIENT}/shared-pages", wait_until="networkidle")

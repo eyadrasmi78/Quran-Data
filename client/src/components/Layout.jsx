@@ -6,7 +6,8 @@ const navItems = [
   { to: '/juz', label: 'الأجزاء' },
   { to: '/pages', label: 'المصحف' },
   { to: '/sajda', label: 'السجدات' },
-  { to: '/stats', label: 'الإحصائيات' }
+  { to: '/stats', label: 'الإحصائيات' },
+  { to: '/compare', label: 'مقارنة' }
 ];
 
 export default function Layout({ children }) {
