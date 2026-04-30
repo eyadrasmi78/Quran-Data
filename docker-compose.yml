@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    image: quran-data-api:local
+    container_name: quran_data_api
+    environment:
+      - PORT=5000
+      - API_RATE_LIMIT=300
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+    networks:
+      - quran_net
+
+  client:
+    build: ./client
+    image: quran-data-client:local
+    container_name: quran_data_client
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - quran_net
+
+networks:
+  quran_net:
+    driver: bridge

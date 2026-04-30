@@ -3,3 +3,8 @@ node_modules
 npm-debug.log
 docs
 unused
+client
+docker-compose.yml
+.git
+.gitignore
+.DS_Store
