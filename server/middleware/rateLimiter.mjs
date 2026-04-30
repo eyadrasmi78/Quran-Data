@@ -4,7 +4,9 @@ import config from '../config.mjs';
 // معدل التحديد مع رسالة تخصيص
 export default rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes in milliseconds
-    max: config.apiRateLimit ? parseInt(config.apiRateLimit, 10) : 300, // Limit each IP to the value from env or 300 requests per windowMs
+    max: parseInt(config.apiRateLimit, 10) || 300, // requests per IP per window
+    standardHeaders: true,
+    legacyHeaders: false,
     message: {
         success: false,
         error: '🛑 Rate Limit Exceeded.',

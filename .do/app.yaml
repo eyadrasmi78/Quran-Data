@@ -13,27 +13,35 @@
 # Total cost on the smallest tier: ~$5/month (api basic-xxs) + free static site.
 
 name: quran-data
-region: nyc
+region: blr # Bangalore — lowest latency from Kuwait/Gulf region
+
+domains:
+  - domain: yaqeenapp.com
+    type: PRIMARY
+  - domain: www.yaqeenapp.com
+    type: ALIAS
 
 services:
   - name: api
     github:
       repo: eyadrasmi78/Quran-Data
       branch: version-2.0
-      deploy_on_push: true
+      deploy_on_push: false # GitHub Actions workflow drives deployments
     source_dir: /
     dockerfile_path: Dockerfile
     instance_count: 1
     instance_size_slug: basic-xxs # 512MB / 1 vCPU — $5/mo
     http_port: 5000
     health_check:
-      http_path: /api/surahs
+      http_path: /api/health
       initial_delay_seconds: 15
       period_seconds: 30
       failure_threshold: 5
     routes:
       - path: /api
+        preserve_path_prefix: true
       - path: /data
+        preserve_path_prefix: true
     envs:
       - key: PORT
         value: "5000"
@@ -47,7 +55,7 @@ static_sites:
     github:
       repo: eyadrasmi78/Quran-Data
       branch: version-2.0
-      deploy_on_push: true
+      deploy_on_push: false # GitHub Actions workflow drives deployments
     source_dir: /client
     build_command: npm install && npm run build
     output_dir: dist

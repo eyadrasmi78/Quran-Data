@@ -11,7 +11,9 @@ export default function SearchBar() {
     const s = parseInt(surah, 10);
     if (!s || s < 1 || s > 114) return;
     if (verse) {
-      nav(`/surah/${s}#verse-${parseInt(verse, 10)}`);
+      const v = parseInt(verse, 10);
+      // VerseList builds DOM ids as `verse-{surah}-{verse}` when surahNumber is set.
+      nav(`/surah/${s}#verse-${s}-${v}`);
     } else {
       nav(`/surah/${s}`);
     }

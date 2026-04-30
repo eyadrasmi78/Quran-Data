@@ -1,17 +1,21 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export default function VerseList({ verses, showSurahName = false }) {
+  const { hash } = useLocation();
   useEffect(() => {
-    if (window.location.hash) {
-      const id = window.location.hash.substring(1);
+    if (!hash) return;
+    const id = hash.substring(1);
+    // Defer to next tick so DOM has the rendered verses.
+    const t = setTimeout(() => {
       const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('ring-4', 'ring-brand-300');
-        setTimeout(() => el.classList.remove('ring-4', 'ring-brand-300'), 2200);
-      }
-    }
-  }, [verses]);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-4', 'ring-brand-300');
+      setTimeout(() => el.classList.remove('ring-4', 'ring-brand-300'), 2200);
+    }, 50);
+    return () => clearTimeout(t);
+  }, [verses, hash]);
 
   if (!verses?.length) {
     return <p className="text-center text-brand-700 py-10">لا توجد آيات.</p>;

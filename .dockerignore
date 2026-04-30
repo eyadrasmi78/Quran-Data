@@ -1,10 +1,23 @@
-package-lock.json
 node_modules
 npm-debug.log
-docs
-unused
-client
-docker-compose.yml
+*.log
+.env
+.env.*
 .git
 .gitignore
+.github
+.do
 .DS_Store
+
+# Local-only tooling and folders that don't belong in the API image
+client
+docker-compose.yml
+docs/api_documentation.md
+unused
+README.md
+DEPLOY.md
+
+# Bulky non-public artifacts (the API only serves /data/quran_image + pagesQuran.json)
+data/csv
+data/sqlite
+data/mainDataQuran.json

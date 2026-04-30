@@ -132,8 +132,11 @@ export function computeSurahLines(surah, pages, allSurahsMeta = []) {
       const verseLinesAvail = Math.max(1, LINES_PER_PAGE - totalHeaders);
       const target = surahsOnPage.find((s) => s.number === surah.number);
       const targetVerses = target?.versesOnPage ?? versesOnPage;
-
-      lines = Math.round((targetVerses / totalVerses) * verseLinesAvail);
+      const verseShare = Math.round((targetVerses / totalVerses) * verseLinesAvail);
+      // Credit the surah's own header lines back to its line count — the
+      // header decoration belongs to the surah, not to the "lost lines" pool.
+      const ownHeader = target?.startsHere ? sharedHeaderFor(surah.number) : 0;
+      lines = verseShare + ownHeader;
     }
 
     lines = Math.max(1, lines);
@@ -283,7 +286,11 @@ export function formatDurationAr(minutes) {
   }
   const d = Math.floor(h / 24);
   const rh = h % 24;
-  return rh === 0 ? `${formatNumber(d)} يوم` : `${formatNumber(d)} ي و${formatNumber(rh)} س`;
+  // Build "X ي و Y س و Z د" omitting any zero parts so we don't drop minutes.
+  const parts = [`${formatNumber(d)} ي`];
+  if (rh > 0) parts.push(`${formatNumber(rh)} س`);
+  if (m > 0) parts.push(`${formatNumber(m)} د`);
+  return parts.join(' و');
 }
 
 /**

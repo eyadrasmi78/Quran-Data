@@ -111,7 +111,10 @@ export default function StatsPage() {
               min="1"
               max="50"
               value={pagesPerDay}
-              onChange={(e) => setPagesPerDay(parseInt(e.target.value, 10) || 1)}
+              onChange={(e) => {
+                const n = parseInt(e.target.value, 10);
+                setPagesPerDay(Math.min(50, Math.max(1, Number.isFinite(n) ? n : 1)));
+              }}
               className="w-20 px-3 py-1 rounded-md border border-brand-300 text-center bg-white"
             />
             <span className="text-brand-800 font-bold">صفحة يومياً، تنتهي خلال</span>
