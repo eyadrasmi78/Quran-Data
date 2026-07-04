@@ -6,8 +6,11 @@ services:
     environment:
       - PORT=5000
       - API_RATE_LIMIT=300
+      - NODE_ENV=production
     ports:
-      - "5001:5000"
+      # Host port 5106 → container 5000. 5000 is blocked by macOS AirPlay,
+      # 5001 is taken by another local demo (fajer_web), so we use 5106.
+      - "5106:5000"
     restart: unless-stopped
     networks:
       - quran_net
@@ -19,7 +22,9 @@ services:
     depends_on:
       - api
     ports:
-      - "3000:80"
+      # Host port 3106 → container 80. 3000 is taken by another local demo
+      # (screenshot-to-code); using 3106 to avoid every common conflict.
+      - "3106:80"
     restart: unless-stopped
     networks:
       - quran_net
